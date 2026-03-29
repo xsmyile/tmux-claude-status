@@ -80,7 +80,17 @@ Claude Code hooks          Status files              tmux status bar
 1. Claude Code fires hook events as it works
 2. `hook.sh` writes `working` or `idle` to a per-pane status file
 3. `status.sh` counts Claude panes and their states, renders to the status bar
-4. Stale status files are cleaned up automatically when panes close
+4. Stale status files are cleaned up automatically when sessions close
+
+## Status bar placement
+
+By default the plugin appends to `status-right`. If you build your status bar manually (e.g. with catppuccin or a custom theme), use the `#{claude_status}` placeholder to control where it appears:
+
+```tmux
+set -g status-right "#{claude_status} other-stuff"
+```
+
+The plugin replaces the placeholder with the status output at load time.
 
 ## Options
 
@@ -96,7 +106,15 @@ set -g @claude-status-color-text    "#cad3f5"   # foreground (default)
 set -g @claude-status-icon "󰯉 "
 ```
 
-The defaults use [Catppuccin Macchiato](https://catppuccin.com/) colors but work on any theme.
+The default colors (green, yellow, light grey) work with most themes and can be overridden to match yours.
+
+### Refresh rate
+
+The status updates every `status-interval` seconds. For responsive updates:
+
+```tmux
+set -g status-interval 2
+```
 
 ## Requirements
 

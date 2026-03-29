@@ -26,13 +26,6 @@ case "${1:-}" in
         ;;
     Stop|Notification)
         echo "idle" > "$STATUS_DIR/${PANE_ID}.status"
-        # Clean up stale status files for panes that no longer exist
-        existing_panes=$(tmux list-panes -a -F '#{pane_id}' 2>/dev/null)
-        for f in "$STATUS_DIR"/*.status; do
-            [ -f "$f" ] || continue
-            pid=$(basename "$f" .status)
-            echo "$existing_panes" | grep -qx "$pid" || rm -f "$f"
-        done
         ;;
 esac
 

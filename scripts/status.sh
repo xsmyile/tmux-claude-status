@@ -2,15 +2,17 @@
 
 set -euo pipefail
 
-CURRENT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$CURRENT_DIR/helpers.sh"
-
 STATUS_DIR="$HOME/.cache/tmux-claude-status"
 
-color_working=$(get_tmux_option "@claude-status-color-working" "#a6da95")
-color_idle=$(get_tmux_option "@claude-status-color-idle" "#eed49f")
-color_text=$(get_tmux_option "@claude-status-color-text" "#cad3f5")
-icon=$(get_tmux_option "@claude-status-icon" "󰯉 ")
+color_working=$(tmux show-environment -g TMUX_CLAUDE_STATUS_COLOR_WORKING 2>/dev/null | cut -d= -f2-)
+color_idle=$(tmux show-environment -g TMUX_CLAUDE_STATUS_COLOR_IDLE 2>/dev/null | cut -d= -f2-)
+color_text=$(tmux show-environment -g TMUX_CLAUDE_STATUS_COLOR_TEXT 2>/dev/null | cut -d= -f2-)
+icon=$(tmux show-environment -g TMUX_CLAUDE_STATUS_ICON 2>/dev/null | cut -d= -f2-)
+
+[ -z "$color_working" ] && color_working="#a6da95"
+[ -z "$color_idle" ] && color_idle="#eed49f"
+[ -z "$color_text" ] && color_text="#cad3f5"
+[ -z "$icon" ] && icon="󰯉 "
 
 total=0
 working=0
