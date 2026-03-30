@@ -1,6 +1,14 @@
 # tmux-claude-status
 
-Show live [Claude Code](https://docs.anthropic.com/en/docs/claude-code) activity in your tmux status bar. See at a glance how many instances are working vs idle across all panes.
+A minimal, zero-dependency shell plugin that shows live [Claude Code](https://docs.anthropic.com/en/docs/claude-code) activity in your tmux status bar. See at a glance how many instances are working vs idle across all panes.
+
+**Default**
+
+![Default status bar](assets/default.png)
+
+**Customized**
+
+![Customized status bar](assets/custom.png)
 
 ## Install
 
