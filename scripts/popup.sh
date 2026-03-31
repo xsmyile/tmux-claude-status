@@ -10,7 +10,8 @@ ORANGE='\033[38;5;208m'
 DIM='\033[2m'
 RESET='\033[0m'
 
-pane_info=$(tmux list-panes -a -F "#{pane_id}	#{pane_current_path}	#{pane_current_command}" 2>/dev/null)
+hooks_ok=""
+raw=$(tmux show-environment -g TMUX_CLAUDE_STATUS_HOOKS_OK 2>/dev/null) && hooks_ok="${raw#*=}"
 
 working_out=""
 waiting_out=""
@@ -19,22 +20,17 @@ working_count=0
 waiting_count=0
 idle_count=0
 
-for status_file in "$STATUS_DIR"/*.status; do
-    [ -f "$status_file" ] || continue
-
-    pane_id="$(basename "$status_file" .status)"
-
-    pane_line=$(echo "$pane_info" | grep -F "${pane_id}	" | head -1)
-    [ -n "$pane_line" ] || continue
-
-    pane_cmd=$(echo "$pane_line" | cut -f3)
+while IFS=$'\t' read -r pane_id pane_path pane_cmd; do
     [ "$pane_cmd" = "claude" ] || continue
 
-    status=$(<"$status_file") || status="idle"
-    [ -n "$status" ] || status="idle"
+    status="idle"
+    status_file="$STATUS_DIR/${pane_id}.status"
+    if [ -f "$status_file" ]; then
+        status=$(<"$status_file") || status="idle"
+        [ -n "$status" ] || status="idle"
+    fi
 
-    path=$(echo "$pane_line" | cut -f2)
-    path="${path/#$HOME/\~}"
+    path="${pane_path/#$HOME/\~}"
 
     max_path=34
     if [ "${#path}" -gt "$max_path" ]; then
@@ -58,7 +54,7 @@ for status_file in "$STATUS_DIR"/*.status; do
             idle_count=$((idle_count + 1))
             ;;
     esac
-done
+done < <(tmux list-panes -a -F "#{pane_id}	#{pane_current_path}	#{pane_current_command}" 2>/dev/null)
 
 total=$((working_count + waiting_count + idle_count))
 
@@ -77,6 +73,13 @@ else
     [ "$idle_count" -gt 0 ] && summary="${summary}${sep}$idle_count idle"
     printf '  %b%s%b\n' "$DIM" "$summary" "$RESET"
 fi
+
+if [ "$hooks_ok" != "1" ] && [ "$total" -gt 0 ]; then
+    echo ""
+    printf '  %b⚠ Hooks not configured — status may be inaccurate%b\n' "$ORANGE" "$RESET"
+    printf '  %bSee: github.com/xsmyile/tmux-claude-status#setup%b\n' "$DIM" "$RESET"
+fi
+
 echo ""
 printf '  %bPress q or Esc to close%b\n' "$DIM" "$RESET"
 read -rsn1
