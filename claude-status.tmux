@@ -8,6 +8,7 @@ status_command="#($CURRENT_DIR/scripts/status.sh)"
 
 # Cache user options in tmux environment so status.sh avoids per-poll lookups
 tmux set-environment -g TMUX_CLAUDE_STATUS_COLOR_WORKING "$(get_tmux_option "@claude-status-color-working" "#a6da95")"
+tmux set-environment -g TMUX_CLAUDE_STATUS_COLOR_WAITING "$(get_tmux_option "@claude-status-color-waiting" "#f5a97f")"
 tmux set-environment -g TMUX_CLAUDE_STATUS_COLOR_IDLE "$(get_tmux_option "@claude-status-color-idle" "#eed49f")"
 tmux set-environment -g TMUX_CLAUDE_STATUS_COLOR_TEXT "$(get_tmux_option "@claude-status-color-text" "#cad3f5")"
 tmux set-environment -g TMUX_CLAUDE_STATUS_ICON "$(get_tmux_option "@claude-status-icon" "󰯉 ")"

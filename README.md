@@ -1,6 +1,6 @@
 # tmux-claude-status
 
-A minimal, zero-dependency shell plugin that shows live [Claude Code](https://docs.anthropic.com/en/docs/claude-code) activity in your tmux status bar. See at a glance how many instances are working vs idle across all panes.
+A minimal, zero-dependency shell plugin that shows live [Claude Code](https://docs.anthropic.com/en/docs/claude-code) activity in your tmux status bar. See at a glance how many instances are working, waiting for input, or idle across all panes.
 
 **Default**
 
@@ -79,15 +79,15 @@ The plugin tracks Claude Code activity via [hooks](https://docs.anthropic.com/en
 Claude Code hooks          Status files              tmux status bar
 ┌──────────────┐   write   ┌────────────────────┐   read   ┌──────────┐
 │ UserPrompt   ├──────────>│ ~/.cache/           ├────────>│ 2 working│
-│ PreToolUse   │           │ tmux-claude-status/ │         │ 1 idle   │
-│ Stop         │           │ %42.status          │         └──────────┘
-│ Notification │           └────────────────────┘
+│ PreToolUse   │           │ tmux-claude-status/ │         │ 1 waiting│
+│ Stop         │           │ %42.status          │         │ 0 idle   │
+│ Notification │           └────────────────────┘         └──────────┘
 └──────────────┘
 ```
 
 1. Claude Code fires hook events as it works
-2. `hook.sh` writes `working` or `idle` to a per-pane status file
-3. `status.sh` counts Claude panes and their states, renders to the status bar
+2. `hook.sh` writes `working`, `waiting`, or `idle` to a per-pane status file
+3. `status.sh` counts Claude panes and their states (working/waiting/idle), renders to the status bar
 4. Stale status files are cleaned up automatically when sessions close
 
 ## Status bar placement
@@ -107,6 +107,7 @@ All options are optional. Set them in `tmux.conf` **before** the TPM `run` line.
 ```tmux
 # Colors (any tmux-compatible color: hex, name, or terminal color number)
 set -g @claude-status-color-working "#a6da95"   # green (default)
+set -g @claude-status-color-waiting "#f5a97f"   # orange (default)
 set -g @claude-status-color-idle    "#eed49f"   # yellow (default)
 set -g @claude-status-color-text    "#cad3f5"   # foreground (default)
 
@@ -114,7 +115,7 @@ set -g @claude-status-color-text    "#cad3f5"   # foreground (default)
 set -g @claude-status-icon "󰯉 "
 ```
 
-The default colors (green, yellow, light grey) work with most themes and can be overridden to match yours.
+The default colors (green, orange, yellow, light grey) work with most themes and can be overridden to match yours.
 
 ### Refresh rate
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Claude Code hook — writes working/idle status per tmux pane.
+# Claude Code hook — writes working/idle/waiting status per tmux pane.
 #
 # Wire this into ~/.claude/settings.json (see README).
 # Called as: hook.sh <event_name>
@@ -24,8 +24,11 @@ case "${1:-}" in
     UserPromptSubmit|PreToolUse)
         echo "working" > "$STATUS_DIR/${PANE_ID}.status"
         ;;
-    Stop|Notification)
+    Stop)
         echo "idle" > "$STATUS_DIR/${PANE_ID}.status"
+        ;;
+    Notification)
+        echo "waiting" > "$STATUS_DIR/${PANE_ID}.status"
         ;;
 esac
 
