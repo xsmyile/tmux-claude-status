@@ -27,12 +27,13 @@ else
 fi
 
 # Border style
-border_flag=""
-raw=$(tmux show-environment -g TMUX_CLAUDE_STATUS_POPUP_BORDER 2>/dev/null) && {
-    border="${raw#*=}"
-    [ -n "$border" ] && border_flag="-b $border"
-}
+border=""
+raw=$(tmux show-environment -g TMUX_CLAUDE_STATUS_POPUP_BORDER 2>/dev/null) && border="${raw#*=}"
 
-# shellcheck disable=SC2086
-exec tmux display-popup -E -w 60 -h "$height" $border_flag \
-    -T " Claude Status " "$SCRIPT_DIR/popup.sh"
+if [ -n "$border" ]; then
+    exec tmux display-popup -E -w 60 -h "$height" -b "$border" \
+        -T " Claude Status " "$SCRIPT_DIR/popup.sh"
+else
+    exec tmux display-popup -E -w 60 -h "$height" \
+        -T " Claude Status " "$SCRIPT_DIR/popup.sh"
+fi

@@ -6,11 +6,20 @@ source "$CURRENT_DIR/scripts/helpers.sh"
 
 status_command="#($CURRENT_DIR/scripts/status.sh)"
 
+validate_color() {
+    local value="$1" default="$2"
+    if printf '%s' "$value" | grep -q '#('; then
+        echo "$default"
+    else
+        echo "$value"
+    fi
+}
+
 # Cache user options in tmux environment so status.sh avoids per-poll lookups
-tmux set-environment -g TMUX_CLAUDE_STATUS_COLOR_WORKING "$(get_tmux_option "@claude-status-color-working" "#a6da95")"
-tmux set-environment -g TMUX_CLAUDE_STATUS_COLOR_WAITING "$(get_tmux_option "@claude-status-color-waiting" "#f5a97f")"
-tmux set-environment -g TMUX_CLAUDE_STATUS_COLOR_IDLE "$(get_tmux_option "@claude-status-color-idle" "#eed49f")"
-tmux set-environment -g TMUX_CLAUDE_STATUS_COLOR_TEXT "$(get_tmux_option "@claude-status-color-text" "#cad3f5")"
+tmux set-environment -g TMUX_CLAUDE_STATUS_COLOR_WORKING "$(validate_color "$(get_tmux_option "@claude-status-color-working" "#a6da95")" "#a6da95")"
+tmux set-environment -g TMUX_CLAUDE_STATUS_COLOR_WAITING "$(validate_color "$(get_tmux_option "@claude-status-color-waiting" "#f5a97f")" "#f5a97f")"
+tmux set-environment -g TMUX_CLAUDE_STATUS_COLOR_IDLE "$(validate_color "$(get_tmux_option "@claude-status-color-idle" "#eed49f")" "#eed49f")"
+tmux set-environment -g TMUX_CLAUDE_STATUS_COLOR_TEXT "$(validate_color "$(get_tmux_option "@claude-status-color-text" "#cad3f5")" "#cad3f5")"
 tmux set-environment -g TMUX_CLAUDE_STATUS_ICON "$(get_tmux_option "@claude-status-icon" "󰯉 ")"
 
 interpolate() {
