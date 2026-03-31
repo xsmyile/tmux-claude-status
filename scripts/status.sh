@@ -4,6 +4,9 @@ set -euo pipefail
 
 STATUS_DIR="$HOME/.cache/tmux-claude-status"
 
+hooks_ok=""
+raw=$(tmux show-environment -g TMUX_CLAUDE_STATUS_HOOKS_OK 2>/dev/null) && hooks_ok="${raw#*=}"
+
 color_working="" color_waiting="" color_idle="" color_text="" icon=""
 raw=$(tmux show-environment -g TMUX_CLAUDE_STATUS_COLOR_WORKING 2>/dev/null) && color_working="${raw#*=}"
 raw=$(tmux show-environment -g TMUX_CLAUDE_STATUS_COLOR_WAITING 2>/dev/null) && color_waiting="${raw#*=}"
@@ -35,6 +38,11 @@ while IFS=$'\t' read -r pane_id pane_cmd; do
         fi
     fi
 done < <(tmux list-panes -a -F "#{pane_id}	#{pane_current_command}" 2>/dev/null)
+
+if [ "$hooks_ok" != "1" ] && [ "$total" -gt 0 ]; then
+    echo "${icon}#[fg=${color_waiting}]⚠ hooks not configured"
+    exit 0
+fi
 
 idle=$((total - working - waiting))
 

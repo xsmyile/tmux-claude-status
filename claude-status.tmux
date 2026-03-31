@@ -41,6 +41,13 @@ fi
 # Clean up stale status files when sessions close
 tmux set-hook -g session-closed "run-shell '$CURRENT_DIR/scripts/cleanup.sh'"
 
+# Detect whether hooks are configured in ~/.claude/settings.json
+hooks_configured=0
+if [ -f "$HOME/.claude/settings.json" ]; then
+    grep -qF "tmux-claude-status" "$HOME/.claude/settings.json" && hooks_configured=1
+fi
+tmux set-environment -g TMUX_CLAUDE_STATUS_HOOKS_OK "$hooks_configured"
+
 # Cache popup border for popup-open.sh to read
 tmux set-environment -g TMUX_CLAUDE_STATUS_POPUP_BORDER "$(get_tmux_option "@claude-status-popup-border" "")"
 
