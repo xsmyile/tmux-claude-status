@@ -113,6 +113,9 @@ set -g @claude-status-color-text    "#cad3f5"   # foreground (default)
 
 # Icon shown before the status (Nerd Font icon, emoji, or text)
 set -g @claude-status-icon "󰯉 "
+
+# Key binding for the sessions overview popup (default: C)
+set -g @claude-status-popup-key "C"
 ```
 
 The default colors (green, orange, yellow, light grey) work with most themes and can be overridden to match yours.
@@ -123,6 +126,21 @@ The status updates every `status-interval` seconds. For responsive updates:
 
 ```tmux
 set -g status-interval 2
+```
+
+## Sessions overview popup
+
+Press `prefix + C` (configurable via `@claude-status-popup-key`) to open a popup window showing all active Claude Code sessions with their status and working directory.
+
+```
+  Claude Code Sessions
+  ────────────────────────────────────────
+
+  ● %23  ~/dev/myapp              working
+  ◉ %47  ~/dev/api-server         waiting
+  ○ %12  ~/dev/tmux-plugin        idle
+
+  3 sessions: 1 working · 1 waiting · 1 idle
 ```
 
 ## Requirements
