@@ -40,3 +40,7 @@ fi
 
 # Clean up stale status files when sessions close
 tmux set-hook -g session-closed "run-shell '$CURRENT_DIR/scripts/cleanup.sh'"
+
+# Bind key to open sessions overview popup
+popup_key=$(get_tmux_option "@claude-status-popup-key" "C")
+tmux bind-key "$popup_key" display-popup -E -w 50 -h 15 -T " Claude Status " "$CURRENT_DIR/scripts/popup.sh"
