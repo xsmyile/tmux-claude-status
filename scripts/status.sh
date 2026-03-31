@@ -4,11 +4,12 @@ set -euo pipefail
 
 STATUS_DIR="$HOME/.cache/tmux-claude-status"
 
-color_working=$(tmux show-environment -g TMUX_CLAUDE_STATUS_COLOR_WORKING 2>/dev/null | cut -d= -f2-)
-color_waiting=$(tmux show-environment -g TMUX_CLAUDE_STATUS_COLOR_WAITING 2>/dev/null | cut -d= -f2-)
-color_idle=$(tmux show-environment -g TMUX_CLAUDE_STATUS_COLOR_IDLE 2>/dev/null | cut -d= -f2-)
-color_text=$(tmux show-environment -g TMUX_CLAUDE_STATUS_COLOR_TEXT 2>/dev/null | cut -d= -f2-)
-icon=$(tmux show-environment -g TMUX_CLAUDE_STATUS_ICON 2>/dev/null | cut -d= -f2-)
+color_working="" color_waiting="" color_idle="" color_text="" icon=""
+raw=$(tmux show-environment -g TMUX_CLAUDE_STATUS_COLOR_WORKING 2>/dev/null) && color_working="${raw#*=}"
+raw=$(tmux show-environment -g TMUX_CLAUDE_STATUS_COLOR_WAITING 2>/dev/null) && color_waiting="${raw#*=}"
+raw=$(tmux show-environment -g TMUX_CLAUDE_STATUS_COLOR_IDLE 2>/dev/null) && color_idle="${raw#*=}"
+raw=$(tmux show-environment -g TMUX_CLAUDE_STATUS_COLOR_TEXT 2>/dev/null) && color_text="${raw#*=}"
+raw=$(tmux show-environment -g TMUX_CLAUDE_STATUS_ICON 2>/dev/null) && icon="${raw#*=}"
 
 [ -z "$color_working" ] && color_working="#a6da95"
 [ -z "$color_waiting" ] && color_waiting="#f5a97f"
@@ -21,16 +22,16 @@ working=0
 waiting=0
 
 while IFS=$'\t' read -r pane_id pane_cmd; do
-    [[ "$pane_cmd" == "claude" ]] || continue
-    ((total++)) || true
+    [ "$pane_cmd" = "claude" ] || continue
+    total=$((total + 1))
 
     status_file="$STATUS_DIR/${pane_id}.status"
     if [ -f "$status_file" ]; then
-        pane_status=$(cat "$status_file" 2>/dev/null)
-        if [[ "$pane_status" == "working" ]]; then
-            ((working++)) || true
-        elif [[ "$pane_status" == "waiting" ]]; then
-            ((waiting++)) || true
+        pane_status=$(<"$status_file")
+        if [ "$pane_status" = "working" ]; then
+            working=$((working + 1))
+        elif [ "$pane_status" = "waiting" ]; then
+            waiting=$((waiting + 1))
         fi
     fi
 done < <(tmux list-panes -a -F "#{pane_id}	#{pane_current_command}" 2>/dev/null)
