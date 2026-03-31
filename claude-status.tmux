@@ -18,8 +18,7 @@ interpolate() {
     local value
     value=$(tmux show-option -gqv "$option")
     if printf '%s' "$value" | grep -qF '#{claude_status}'; then
-        local new_value
-        new_value=$(printf '%s' "$value" | sed "s|#{claude_status}|${status_command}|g")
+        local new_value="${value//\#\{claude_status\}/$status_command}"
         tmux set-option -gq "$option" "$new_value"
         return 0
     fi
@@ -42,6 +41,9 @@ fi
 # Clean up stale status files when sessions close
 tmux set-hook -g session-closed "run-shell '$CURRENT_DIR/scripts/cleanup.sh'"
 
+# Cache popup border for popup-open.sh to read
+tmux set-environment -g TMUX_CLAUDE_STATUS_POPUP_BORDER "$(get_tmux_option "@claude-status-popup-border" "")"
+
 # Bind key to open sessions overview popup
 popup_key=$(get_tmux_option "@claude-status-popup-key" "C")
-tmux bind-key "$popup_key" display-popup -E -w 50 -h 15 -T " Claude Status " "$CURRENT_DIR/scripts/popup.sh"
+tmux bind-key "$popup_key" run-shell "$CURRENT_DIR/scripts/popup-open.sh"

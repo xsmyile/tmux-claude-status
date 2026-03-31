@@ -4,97 +4,79 @@ set -euo pipefail
 
 STATUS_DIR="$HOME/.cache/tmux-claude-status"
 
-GREEN="\033[32m"
-YELLOW="\033[33m"
-ORANGE="\033[38;5;208m"
-BOLD="\033[1m"
-DIM="\033[2m"
-RESET="\033[0m"
+GREEN='\033[32m'
+YELLOW='\033[33m'
+ORANGE='\033[38;5;208m'
+DIM='\033[2m'
+RESET='\033[0m'
 
-working_lines=()
-waiting_lines=()
-idle_lines=()
+pane_info=$(tmux list-panes -a -F "#{pane_id}	#{pane_current_path}	#{pane_current_command}" 2>/dev/null)
 
+working_out=""
+waiting_out=""
+idle_out=""
 working_count=0
 waiting_count=0
 idle_count=0
 
-declare -A pane_paths
-while IFS=$'\t' read -r pane_id pane_path; do
-    pane_paths["$pane_id"]="$pane_path"
-done < <(tmux list-panes -a -F "#{pane_id}	#{pane_current_path}" 2>/dev/null)
-
 for status_file in "$STATUS_DIR"/*.status; do
     [ -f "$status_file" ] || continue
 
-    filename=$(basename "$status_file")
-    pane_id="${filename%.status}"
+    pane_id="$(basename "$status_file" .status)"
 
-    [ -n "${pane_paths[$pane_id]+x}" ] || continue
+    pane_line=$(echo "$pane_info" | grep -F "${pane_id}	" | head -1)
+    [ -n "$pane_line" ] || continue
 
-    status=$(cat "$status_file" 2>/dev/null)
+    pane_cmd=$(echo "$pane_line" | cut -f3)
+    [ "$pane_cmd" = "claude" ] || continue
+
+    status=$(<"$status_file") || status="idle"
     [ -n "$status" ] || status="idle"
 
-    path="${pane_paths[$pane_id]}"
+    path=$(echo "$pane_line" | cut -f2)
     path="${path/#$HOME/\~}"
 
-    line=$(printf "  %-5s %-30s %s" "$pane_id" "$path" "$status")
+    max_path=34
+    if [ "${#path}" -gt "$max_path" ]; then
+        trim=$((${#path} - max_path + 2))
+        path="..${path:$trim}"
+    fi
+
+    line=$(printf "%-4s %-${max_path}s %7s" "$pane_id" "$path" "$status")
 
     case "$status" in
         working)
-            working_lines+=("$(printf "  ${GREEN}●${RESET} ${line}")")
-            ((working_count++)) || true
+            working_out="${working_out}  ${GREEN}●${RESET} ${line}\n"
+            working_count=$((working_count + 1))
             ;;
         waiting)
-            waiting_lines+=("$(printf "  ${ORANGE}◉${RESET} ${line}")")
-            ((waiting_count++)) || true
+            waiting_out="${waiting_out}  ${ORANGE}◉${RESET} ${line}\n"
+            waiting_count=$((waiting_count + 1))
             ;;
         *)
-            idle_lines+=("$(printf "  ${YELLOW}○${RESET} ${line}")")
-            ((idle_count++)) || true
+            idle_out="${idle_out}  ${YELLOW}○${RESET} ${line}\n"
+            idle_count=$((idle_count + 1))
             ;;
     esac
 done
 
-echo ""
-printf "  ${BOLD}Claude Code Sessions${RESET}\n"
-printf "  ${DIM}────────────────────────────────────────${RESET}\n"
-echo ""
-
 total=$((working_count + waiting_count + idle_count))
 
+echo ""
 if [ "$total" -eq 0 ]; then
     printf "  No active Claude sessions\n"
+else
+    [ -n "$working_out" ] && printf '%b' "$working_out"
+    [ -n "$waiting_out" ] && printf '%b' "$waiting_out"
+    [ -n "$idle_out" ] && printf '%b' "$idle_out"
     echo ""
-    exit 0
+    summary="  $total sessions:"
+    sep=""
+    [ "$working_count" -gt 0 ] && summary="$summary $working_count working" && sep=" · "
+    [ "$waiting_count" -gt 0 ] && summary="${summary}${sep}$waiting_count waiting" && sep=" · "
+    [ "$idle_count" -gt 0 ] && summary="${summary}${sep}$idle_count idle"
+    printf '  %b%s%b\n' "$DIM" "$summary" "$RESET"
 fi
-
-for line in "${working_lines[@]}"; do
-    printf '%b\n' "$line"
-done
-for line in "${waiting_lines[@]}"; do
-    printf '%b\n' "$line"
-done
-for line in "${idle_lines[@]}"; do
-    printf '%b\n' "$line"
-done
-
 echo ""
-summary="  $total sessions:"
-parts=()
-[ "$working_count" -gt 0 ] && parts+=("$working_count working")
-[ "$waiting_count" -gt 0 ] && parts+=("$waiting_count waiting")
-[ "$idle_count" -gt 0 ] && parts+=("$idle_count idle")
-
-first=1
-for part in "${parts[@]}"; do
-    if [ "$first" -eq 1 ]; then
-        summary="$summary $part"
-        first=0
-    else
-        summary="$summary · $part"
-    fi
-done
-
-printf "  ${DIM}%s${RESET}\n" "$summary"
-echo ""
+printf '  %bPress q or Esc to close%b\n' "$DIM" "$RESET"
+read -rsn1

@@ -9,26 +9,38 @@
 set -euo pipefail
 
 STATUS_DIR="$HOME/.cache/tmux-claude-status"
-mkdir -p "$STATUS_DIR"
-
-# Drain stdin (Claude Code pipes hook context via stdin)
-cat > /dev/null
+[ -d "$STATUS_DIR" ] || mkdir -p "$STATUS_DIR"
 
 # Skip if not inside tmux
-[ -z "${TMUX:-}" ] && exit 0
+[ -z "${TMUX:-}" ] && { cat > /dev/null; exit 0; }
 
-PANE_ID=$(tmux display-message -p '#{pane_id}' 2>/dev/null)
-[ -z "$PANE_ID" ] && exit 0
+PANE_ID=$(tmux display-message -p '#{pane_id}' 2>/dev/null) || { cat > /dev/null; exit 0; }
+[ -z "$PANE_ID" ] && { cat > /dev/null; exit 0; }
 
 case "${1:-}" in
     UserPromptSubmit|PreToolUse)
+        cat > /dev/null
         echo "working" > "$STATUS_DIR/${PANE_ID}.status"
         ;;
     Stop)
+        cat > /dev/null
         echo "idle" > "$STATUS_DIR/${PANE_ID}.status"
         ;;
     Notification)
-        echo "waiting" > "$STATUS_DIR/${PANE_ID}.status"
+        input=$(cat)
+        ntype=$(jq -r '.notification_type // empty' <<< "$input" 2>/dev/null) ||
+            ntype=$(grep -o '"notification_type" *: *"[^"]*"' <<< "$input" | head -1 | cut -d'"' -f4)
+        case "$ntype" in
+            permission_prompt)
+                echo "waiting" > "$STATUS_DIR/${PANE_ID}.status"
+                ;;
+            idle_prompt)
+                echo "idle" > "$STATUS_DIR/${PANE_ID}.status"
+                ;;
+        esac
+        ;;
+    *)
+        cat > /dev/null
         ;;
 esac
 
