@@ -3,15 +3,17 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/helpers.sh"
 
 hooks_ok=""
 raw=$(tmux show-environment -g TMUX_CLAUDE_STATUS_HOOKS_OK 2>/dev/null) && hooks_ok="${raw#*=}"
 
 # Count active Claude panes for exact popup height
+claude_panes=$(get_claude_panes)
 count=0
-while IFS=$'\t' read -r _ pane_cmd; do
-    [ "$pane_cmd" = "claude" ] && count=$((count + 1))
-done < <(tmux list-panes -a -F "#{pane_id}	#{pane_current_command}" 2>/dev/null)
+if [ -n "$claude_panes" ]; then
+    count=$(wc -l <<< "$claude_panes" | tr -d ' ')
+fi
 
 # Content: gap(1) + sessions(N) + gap(1) + summary(1) + gap(1) + footer(1) = N + 5
 # Empty: gap(1) + message(1) + gap(1) + footer(1) = 4

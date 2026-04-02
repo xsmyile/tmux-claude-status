@@ -2,6 +2,9 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/helpers.sh"
+
 STATUS_DIR="$HOME/.cache/tmux-claude-status"
 
 GREEN='\033[32m'
@@ -20,16 +23,20 @@ working_count=0
 waiting_count=0
 idle_count=0
 
-while IFS=$'\t' read -r pane_id pane_path pane_cmd; do
-    [ "$pane_cmd" = "claude" ] || continue
+claude_panes=$(get_claude_panes)
 
-    status="idle"
+while read -r pane_id; do
+    [ -n "$pane_id" ] || continue
     status_file="$STATUS_DIR/${pane_id}.status"
+
     if [ -f "$status_file" ]; then
         status=$(<"$status_file") || status="idle"
-        [ -n "$status" ] || status="idle"
+    else
+        status="idle"
     fi
+    [ -n "$status" ] || status="idle"
 
+    pane_path=$(tmux display-message -t "$pane_id" -p '#{pane_current_path}' 2>/dev/null) || pane_path="?"
     path="${pane_path/#$HOME/\~}"
 
     max_path=34
@@ -54,7 +61,7 @@ while IFS=$'\t' read -r pane_id pane_path pane_cmd; do
             idle_count=$((idle_count + 1))
             ;;
     esac
-done < <(tmux list-panes -a -F "#{pane_id}	#{pane_current_path}	#{pane_current_command}" 2>/dev/null)
+done <<< "$claude_panes"
 
 total=$((working_count + waiting_count + idle_count))
 

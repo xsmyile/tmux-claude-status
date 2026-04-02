@@ -2,6 +2,9 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/helpers.sh"
+
 STATUS_DIR="$HOME/.cache/tmux-claude-status"
 
 hooks_ok=""
@@ -24,22 +27,22 @@ total=0
 working=0
 waiting=0
 
-while IFS=$'\t' read -r pane_id pane_cmd; do
-    [ "$pane_cmd" = "claude" ] || continue
-    total=$((total + 1))
+claude_panes=$(get_claude_panes)
 
+while read -r pane_id; do
+    [ -n "$pane_id" ] || continue
     status_file="$STATUS_DIR/${pane_id}.status"
-    if [ -f "$status_file" ]; then
-        pane_status=$(<"$status_file")
-        if [ "$pane_status" = "working" ]; then
-            working=$((working + 1))
-        elif [ "$pane_status" = "waiting" ]; then
-            waiting=$((waiting + 1))
-        fi
-    fi
-done < <(tmux list-panes -a -F "#{pane_id}	#{pane_current_command}" 2>/dev/null)
+    [ -f "$status_file" ] || continue
 
-if [ "$hooks_ok" != "1" ] && [ "$total" -gt 0 ]; then
+    total=$((total + 1))
+    pane_status=$(<"$status_file")
+    case "$pane_status" in
+        working) working=$((working + 1)) ;;
+        waiting) waiting=$((waiting + 1)) ;;
+    esac
+done <<< "$claude_panes"
+
+if [ "$hooks_ok" != "1" ] && [ -n "$claude_panes" ]; then
     echo "${icon}#[fg=${color_waiting}]⚠ hooks not configured"
     exit 0
 fi
