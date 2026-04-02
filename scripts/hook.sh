@@ -21,7 +21,12 @@ PANE_ID=$(tmux display-message -p '#{pane_id}' 2>/dev/null) || { cat > /dev/null
 [ -z "$PANE_ID" ] && { cat > /dev/null; exit 0; }
 
 case "${1:-}" in
-    UserPromptSubmit|PreToolUse)
+    PreToolUse)
+        cat > /dev/null
+        echo "working" > "$STATUS_DIR/${PANE_ID}.status"
+        exit 0
+        ;;
+    UserPromptSubmit)
         cat > /dev/null
         echo "working" > "$STATUS_DIR/${PANE_ID}.status"
         ;;
@@ -46,5 +51,7 @@ case "${1:-}" in
         cat > /dev/null
         ;;
 esac
+
+tmux refresh-client -S 2>/dev/null || true
 
 exit 0
